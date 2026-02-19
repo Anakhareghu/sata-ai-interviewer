@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  min-height: 100vh;
+  color: #f1f5f9;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #6366f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #818cf8;
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Pulse animation for recording */
+.recording-pulse {
+  animation: pulse-ring 1.5s infinite;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Wave animation */
+.wave-animation {
+  animation: wave 2s ease-in-out infinite;
+}
+
+@keyframes wave {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.5); }
+}
+
+/* Audio visualizer bars */
+.audio-bar {
+  width: 4px;
+  background: linear-gradient(to top, #6366f1, #a855f7);
+  border-radius: 2px;
+  animation: audio-pulse 0.5s ease-in-out infinite;
+}
+
+.audio-bar:nth-child(2) { animation-delay: 0.1s; }
+.audio-bar:nth-child(3) { animation-delay: 0.2s; }
+.audio-bar:nth-child(4) { animation-delay: 0.3s; }
+.audio-bar:nth-child(5) { animation-delay: 0.4s; }
+
+@keyframes audio-pulse {
+  0%, 100% { height: 8px; }
+  50% { height: 24px; }
+}
+
+/* Button hover effects */
+.btn-primary {
+  @apply bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold;
+  @apply hover:from-indigo-500 hover:to-purple-500 transition-all duration-300;
+  @apply shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/40;
+}
+
+.btn-secondary {
+  @apply bg-dark-800 text-white px-6 py-3 rounded-xl font-semibold;
+  @apply hover:bg-dark-700 transition-all duration-300 border border-dark-600;
+}
+
+/* Card styles */
+.card {
+  @apply glass rounded-2xl p-6 transition-all duration-300;
+  @apply hover:border-indigo-500/30;
+}
+
+/* Score circle */
+.score-circle {
+  @apply relative w-32 h-32 rounded-full;
+  background: conic-gradient(
+    from 0deg,
+    #6366f1 var(--score-percent),
+    #1e293b var(--score-percent)
+  );
+}
+
+.score-circle::before {
+  content: '';
+  @apply absolute inset-2 rounded-full bg-dark-900;
+}
