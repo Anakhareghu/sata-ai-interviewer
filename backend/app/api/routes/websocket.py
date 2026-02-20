@@ -53,14 +53,14 @@ class InterviewManager:
             "timestamp": datetime.utcnow().isoformat()
         })
     
-    async def start_interview(self, resume_data: dict, difficulty: str = "medium"):
+    async def start_interview(self, resume_data: dict, interview_type: str = "mixed"):
         """Initialize and start the interview."""
         logger.info(f"🎤 Starting interview: {self.session_id}")
         
-        # Generate questions
+        # Generate questions based on interview type
         self.questions = await self.question_generator.generate_questions(
             resume_data=resume_data,
-            difficulty=difficulty,
+            interview_type=interview_type,
             num_questions=10
         )
         
@@ -233,8 +233,8 @@ async def interview_websocket(websocket: WebSocket, session_id: str):
                 if message_type == "start":
                     # Start interview with resume data
                     resume_data = data.get("resume_data", {})
-                    difficulty = data.get("difficulty", "medium")
-                    await manager.start_interview(resume_data, difficulty)
+                    interview_type = data.get("interview_type", "mixed")
+                    await manager.start_interview(resume_data, interview_type)
                     
                 elif message_type == "stop_recording":
                     await manager.stop_recording()

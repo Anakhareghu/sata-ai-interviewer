@@ -54,17 +54,16 @@ async def create_interview(
         student_id=student_id_str,
         resume_id=resume_id_str,
         interview_type=data.interview_type,
-        difficulty=data.difficulty,
         status=InterviewStatus.PENDING.value
     )
     
     db.add(session)
     await db.flush()
     
-    # Generate questions
+    # Generate questions based on interview type
     questions = await question_generator.generate_questions(
         resume_data=resume_data,
-        difficulty=data.difficulty,
+        interview_type=data.interview_type,
         num_questions=10
     )
     
@@ -75,7 +74,7 @@ async def create_interview(
             question_number=q["question_number"],
             question_text=q["question_text"],
             question_type=q["question_type"],
-            difficulty=q.get("difficulty", data.difficulty),
+            difficulty=q.get("difficulty", "medium"),
             expected_keywords=q.get("expected_keywords", []),
             expected_answer_guide=q.get("expected_answer_guide", "")
         )

@@ -43,8 +43,8 @@ function Results() {
         );
     }
 
-    const overallScore = report?.performance?.overall_score || report?.overall_score || 75;
-    const grade = report?.performance?.grade || report?.grade || 'B';
+    const overallScore = report?.performance?.overall_score || report?.overall_score || 0;
+    const grade = report?.performance?.grade || report?.grade || 'F';
 
     const scoreData = [{
         name: 'Score',
@@ -103,8 +103,8 @@ function Results() {
                         </div>
                         <div className="mt-4 text-center">
                             <span className={`text-3xl font-bold ${grade.startsWith('A') ? 'text-green-400' :
-                                    grade.startsWith('B') ? 'text-blue-400' :
-                                        grade.startsWith('C') ? 'text-amber-400' : 'text-red-400'
+                                grade.startsWith('B') ? 'text-blue-400' :
+                                    grade.startsWith('C') ? 'text-amber-400' : 'text-red-400'
                                 }`}>
                                 Grade: {grade}
                             </span>
@@ -115,10 +115,10 @@ function Results() {
                     <div className="lg:col-span-2 space-y-4">
                         <h3 className="text-lg font-semibold mb-4">Score Breakdown</h3>
                         {[
-                            { label: 'Technical Accuracy', value: report?.category_scores?.technical || 70, color: 'bg-indigo-500' },
-                            { label: 'Communication', value: report?.category_scores?.hr || 75, color: 'bg-blue-500' },
-                            { label: 'Problem Solving', value: report?.category_scores?.scenario || 65, color: 'bg-purple-500' },
-                            { label: 'Domain Knowledge', value: report?.category_scores?.project || 72, color: 'bg-pink-500' },
+                            { label: 'Technical Accuracy', value: report?.category_scores?.technical || 0, color: 'bg-indigo-500' },
+                            { label: 'Communication', value: report?.category_scores?.hr || 0, color: 'bg-blue-500' },
+                            { label: 'Problem Solving', value: report?.category_scores?.scenario || 0, color: 'bg-purple-500' },
+                            { label: 'Domain Knowledge', value: report?.category_scores?.project || 0, color: 'bg-pink-500' },
                         ].map((item, index) => (
                             <div key={index} className="space-y-2">
                                 <div className="flex justify-between text-sm">
@@ -152,7 +152,7 @@ function Results() {
                         <h3 className="text-lg font-semibold">Strengths</h3>
                     </div>
                     <ul className="space-y-3">
-                        {(report?.strengths || ['Good technical knowledge', 'Clear communication']).map((strength: string, i: number) => (
+                        {(report?.strengths || ['Participated in the interview']).map((strength: string, i: number) => (
                             <li key={i} className="flex items-start space-x-3">
                                 <TrendingUp className="w-4 h-4 text-green-400 mt-1 flex-shrink-0" />
                                 <span className="text-gray-300">{strength}</span>
@@ -172,7 +172,7 @@ function Results() {
                         <h3 className="text-lg font-semibold">Areas to Improve</h3>
                     </div>
                     <ul className="space-y-3">
-                        {(report?.weaknesses || ['Add more examples', 'Speak more confidently']).map((weakness: string, i: number) => (
+                        {(report?.weaknesses || ['No data available']).map((weakness: string, i: number) => (
                             <li key={i} className="flex items-start space-x-3">
                                 <Target className="w-4 h-4 text-amber-400 mt-1 flex-shrink-0" />
                                 <span className="text-gray-300">{weakness}</span>
@@ -212,8 +212,8 @@ function Results() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.6 }}
                 className={`card ${report?.performance?.placement_ready === 'Ready' || report?.placement_ready === 'Ready'
-                        ? 'bg-green-500/10 border-green-500/30'
-                        : 'bg-amber-500/10 border-amber-500/30'
+                    ? 'bg-green-500/10 border-green-500/30'
+                    : 'bg-amber-500/10 border-amber-500/30'
                     }`}
             >
                 <div className="flex items-center justify-between">
@@ -222,8 +222,8 @@ function Results() {
                         <p className="text-gray-400 mt-1">Based on your interview performance</p>
                     </div>
                     <span className={`text-2xl font-bold ${report?.performance?.placement_ready === 'Ready' || report?.placement_ready === 'Ready'
-                            ? 'text-green-400'
-                            : 'text-amber-400'
+                        ? 'text-green-400'
+                        : 'text-amber-400'
                         }`}>
                         {report?.performance?.placement_ready || report?.placement_ready || 'In Progress'}
                     </span>

@@ -59,7 +59,6 @@ class InterviewCreate(BaseModel):
     student_id: str
     resume_id: Optional[str] = None
     interview_type: str = "mixed"
-    difficulty: str = "medium"
 
 
 class InterviewSessionResponse(BaseModel):
@@ -67,7 +66,7 @@ class InterviewSessionResponse(BaseModel):
     student_id: str
     status: str
     interview_type: str
-    difficulty: str
+    difficulty: str = "mixed"
     total_questions: int = 0
     created_at: Optional[datetime] = None
     

@@ -20,6 +20,7 @@ function InterviewRoom() {
     const [feedback, setFeedback] = useState<string | null>(null);
     const [questions, setQuestions] = useState<any[]>([]);
     const [responses, setResponses] = useState<any[]>([]);
+    const [questionScores, setQuestionScores] = useState<{ idx: number, score: number, skipped: boolean }[]>([]);
 
     const recognitionRef = useRef<any>(null);
     const synthRef = useRef(window.speechSynthesis);
@@ -137,6 +138,34 @@ function InterviewRoom() {
         setTranscript('');
     };
 
+    const evaluateAnswer = (answer: string, question: any): number => {
+        if (!answer || answer.trim().length < 5) return 0;
+
+        const wordCount = answer.split(' ').length;
+        const answerLower = answer.toLowerCase();
+
+        // Keyword match score (0-10)
+        const expectedKeywords: string[] = question?.expected_keywords || [];
+        let keywordScore = 5; // default if no keywords
+        if (expectedKeywords.length > 0) {
+            const matches = expectedKeywords.filter(kw => answerLower.includes(kw.toLowerCase())).length;
+            keywordScore = (matches / expectedKeywords.length) * 10;
+        }
+
+        // Length/detail score (0-10)
+        let lengthScore = Math.min(10, wordCount / 10);
+
+        // Structure score (0-10)
+        let structureScore = 4;
+        if (['for example', 'such as', 'because', 'therefore'].some(w => answerLower.includes(w))) structureScore += 2;
+        if (['first', 'second', 'third', 'step'].some(w => answerLower.includes(w))) structureScore += 2;
+        if (wordCount >= 30) structureScore += 2;
+
+        // Weighted final score (0-10)
+        const finalScore = Math.round(Math.max(1, Math.min(10, keywordScore * 0.4 + lengthScore * 0.3 + structureScore * 0.3)) * 10) / 10;
+        return finalScore;
+    };
+
     const stopRecording = async () => {
         setIsRecording(false);
         if (recognitionRef.current) {
@@ -158,16 +187,16 @@ function InterviewRoom() {
         };
         setResponses(prev => [...prev, response]);
 
-        // Simple scoring based on response length and keywords
-        const wordCount = transcript.split(' ').length;
-        let score = Math.min(10, Math.max(2, wordCount / 5));
+        // Score based on answer quality and keyword matching
+        const score = evaluateAnswer(transcript, currentQuestion);
+        setQuestionScores(prev => [...prev, { idx: questionNumber - 1, score, skipped: false }]);
 
-        if (wordCount < 10) {
-            setFeedback('Try to provide more detailed responses.');
-        } else if (wordCount < 30) {
-            setFeedback('Good start! Consider adding specific examples.');
+        if (score < 4) {
+            setFeedback(`Score: ${score}/10 — Try to provide more detailed responses with specific examples.`);
+        } else if (score < 7) {
+            setFeedback(`Score: ${score}/10 — Good start! Consider adding more depth and examples.`);
         } else {
-            setFeedback('Great response!');
+            setFeedback(`Score: ${score}/10 — Great response!`);
         }
 
         setIsProcessing(false);
@@ -188,22 +217,95 @@ function InterviewRoom() {
     };
 
     const skipQuestion = () => {
-        setFeedback('Question skipped.');
+        // Record skipped question with 0 score
+        setQuestionScores(prev => [...prev, { idx: questionNumber - 1, score: 0, skipped: true }]);
+        setFeedback('Question skipped — scored as 0.');
         setTimeout(() => {
             moveToNextQuestion();
         }, 1000);
     };
 
     const endInterview = () => {
-        // Generate mock report
+        // Calculate actual scores from all questions (including skipped as 0)
+        const allScores = [...questionScores];
+
+        // Any questions not answered or skipped also count as 0
+        for (let i = 0; i < questions.length; i++) {
+            if (!allScores.find(s => s.idx === i)) {
+                allScores.push({ idx: i, score: 0, skipped: true });
+            }
+        }
+
+        const totalQuestions = questions.length;
+        const answeredCount = allScores.filter(s => !s.skipped).length;
+        const skippedCount = allScores.filter(s => s.skipped).length;
+
+        // Overall score out of 100 — average of ALL questions (skipped = 0)
+        const avgScore = totalQuestions > 0
+            ? allScores.reduce((sum, s) => sum + s.score, 0) / totalQuestions
+            : 0;
+        const overallScore = Math.round(avgScore * 10); // Convert 0-10 to 0-100
+
+        // Category scores
+        const categoryScores: Record<string, number[]> = {};
+        allScores.forEach(s => {
+            const q = questions[s.idx];
+            const qType = q?.question_type || 'general';
+            if (!categoryScores[qType]) categoryScores[qType] = [];
+            categoryScores[qType].push(s.score);
+        });
+
+        const catAvg: Record<string, number> = {};
+        Object.entries(categoryScores).forEach(([type, scores]) => {
+            catAvg[type] = Math.round((scores.reduce((a, b) => a + b, 0) / scores.length) * 10);
+        });
+
+        // Grade calculation
+        let grade = 'F';
+        if (overallScore >= 90) grade = 'A+';
+        else if (overallScore >= 80) grade = 'A';
+        else if (overallScore >= 70) grade = 'B+';
+        else if (overallScore >= 60) grade = 'B';
+        else if (overallScore >= 50) grade = 'C+';
+        else if (overallScore >= 40) grade = 'C';
+        else if (overallScore >= 30) grade = 'D';
+
+        // Strengths & weaknesses
+        const strengths: string[] = [];
+        const weaknesses: string[] = [];
+
+        Object.entries(catAvg).forEach(([type, avg]) => {
+            if (avg >= 70) strengths.push(`Strong ${type} skills`);
+            else if (avg < 40) weaknesses.push(`Needs improvement in ${type} areas`);
+        });
+
+        if (skippedCount > 0) weaknesses.push(`Skipped ${skippedCount} question(s)`);
+        if (answeredCount === totalQuestions && overallScore >= 60) strengths.push('Answered all questions');
+        if (strengths.length === 0) strengths.push('Participated in the interview');
+        if (weaknesses.length === 0) weaknesses.push('No major weaknesses identified');
+
+        // Suggestions
+        const suggestions: string[] = [];
+        if (overallScore < 70) suggestions.push('Practice answering questions out loud to improve fluency');
+        if (catAvg['technical'] !== undefined && catAvg['technical'] < 60) suggestions.push('Review core technical concepts and practice coding problems');
+        if (catAvg['hr'] !== undefined && catAvg['hr'] < 60) suggestions.push('Prepare STAR method responses for behavioral questions');
+        if (skippedCount > 0) suggestions.push('Try to attempt all questions instead of skipping');
+        if (overallScore < 50) suggestions.push('Consider taking mock interviews to build confidence');
+        if (suggestions.length === 0) suggestions.push('Continue practicing to maintain your skills');
+
+        const placementReady = overallScore >= 70 ? 'Ready' : overallScore >= 50 ? 'Needs Work' : 'Not Ready';
+
         const report = {
-            overall_score: 75,
-            grade: 'B',
-            questions_answered: responses.length,
-            total_questions: questions.length,
-            strengths: ['Good communication skills', 'Detailed responses'],
-            weaknesses: ['Could provide more technical depth'],
-            improvement_suggestions: ['Practice with mock interviews', 'Prepare STAR method responses']
+            overall_score: overallScore,
+            grade,
+            questions_answered: answeredCount,
+            total_questions: totalQuestions,
+            questions_skipped: skippedCount,
+            category_scores: catAvg,
+            strengths,
+            weaknesses,
+            improvement_suggestions: suggestions,
+            placement_ready: placementReady
         };
 
         navigate(`/results/${sessionId}`, { state: { report } });
@@ -289,8 +391,8 @@ function InterviewRoom() {
                                 onClick={isRecording ? stopRecording : startRecording}
                                 disabled={isAISpeaking}
                                 className={`w-20 h-20 rounded-full flex items-center justify-center transition-all ${isRecording
-                                        ? 'bg-red-500 recording-pulse'
-                                        : 'bg-gradient-to-br from-indigo-500 to-purple-600 hover:opacity-90'
+                                    ? 'bg-red-500 recording-pulse'
+                                    : 'bg-gradient-to-br from-indigo-500 to-purple-600 hover:opacity-90'
                                     } ${isAISpeaking ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
                                 {isRecording ? (
